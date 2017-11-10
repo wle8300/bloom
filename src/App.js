@@ -1,25 +1,23 @@
 import React, { Component } from 'react'
+import PropTypes from 'prop-types'
 
 class App extends Component {
   constructor () {
 
     super()
 
-    //https://stackoverflow.com/questions/4817029/whats-the-best-way-to-detect-a-touch-screen-device-using-javascript
-    this._isTouchCapable = 'ontouchstart' in window || navigator.msMaxTouchPoints
-    this._animationTime = 250
+    this._isTouchCapable = 'ontouchstart' in window || navigator.msMaxTouchPoints // https://stackoverflow.com/q/4817029
+    this._debloomTimeout = null
+
     this.state = {
-      // 'hidden, staging, blooming, resetting'
-      bloomPhase: 'hidden',
+      bloomPhase: 'hidden', // 'hidden, staging, blooming, resetting'
       x: 0,
       y: 0,
-      bloomDistance: 50,
     }
   }
   render() {
     return (
       <div style={this.$1804017614722()}>
-        {this.state.x}–––{this.state.y}
         <div style={this.$3466133276696()}/>
       </div>
     )
@@ -27,38 +25,49 @@ class App extends Component {
   componentDidMount () {
 
     this._isTouchCapable
-    ? document.addEventListener('touchstart', this.handleTouchStart)
-    : document.addEventListener('mousedown', this.handleMouseDown)
+    ? document.addEventListener('touchstart', this.handleEngageButton)
+    : document.addEventListener('mousedown', this.handleEngageButton)
 
     this._isTouchCapable
-    ? document.addEventListener('touchend', this.handleTouchEnd)
-    : document.addEventListener('mouseup', this.handleTouchEnd)
+    ? document.addEventListener('touchend', this.handleDisengageButton)
+    : document.addEventListener('mouseup', this.handleDisengageButton)
   }
-  handleTouchStart = (e) => {
+  handleEngageButton = (e) => {
+
+    const x = e.touches ? e.touches[0].clientX : e.pageX
+    const y = e.touches ? e.touches[0].clientY : e.pageY
+
+
+    clearTimeout(this._debloomTimeout)
 
     this.setState({
       bloomPhase: 'hidden',
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
+      x: x,
+      y: y,
     }, () => this.setState({bloomPhase: 'blooming'}))
   }
-  handleTouchEnd = () => {
+  handleDisengageButton = () => {
 
     this.setState({bloomPhase: 'resetting'}, () => {
 
-      setTimeout(() => {
+      this._debloomTimeout = setTimeout(() => {
 
         this.setState({bloomPhase: 'hidden'})
-      }, this._animationTime);
+      }, this.props.animationMs * this.props.animationMsCompound)
     })
-  }
-  handleMouseDown = (e) => {
-
-    this.setState({x: e.pageX, y: e.pageY})
   }
   $1804017614722 () {
     return {
       height: '100%',
+      cursor: 'pointer',
+      outline: 'none',
+      userSelect: 'none',
+      WebkitTapHighlightColor: 'rgba(0,0,0,0)',
+      WebkitTouchCallout: 'none',
+      WebkitUserSelect: 'none',
+      KhtmlUserSelect: 'none',
+      MozUserSelect: 'none',
+      msUserSelect: 'none',
     }
   }
   $3466133276696 () {
@@ -71,9 +80,11 @@ class App extends Component {
         case 'staging':
           return 'none'
         case 'blooming':
-          return `translateX(-${this.state.bloomDistance}px) translateY(-${this.state.bloomDistance}px)`
+          return `translateX(-${this.props.bloomSize}px) translateY(-${this.props.bloomSize}px)`
         case 'resetting':
-          return `translateX(-${this.state.bloomDistance}px) translateY(-${this.state.bloomDistance}px)`
+          return `translateX(-${this.props.bloomSize}px) translateY(-${this.props.bloomSize}px)`
+        default:
+          return 'hidden'
       }
     }
 
@@ -85,9 +96,11 @@ class App extends Component {
         case 'staging':
           return 0
         case 'blooming':
-          return this.state.bloomDistance
+          return this.props.bloomSize
         case 'resetting':
-          return this.state.bloomDistance
+          return this.props.bloomSize
+        default:
+          return 0
       }
     }
 
@@ -99,9 +112,11 @@ class App extends Component {
         case 'staging':
           return 'none'
         case 'blooming':
-          return `transform ${this._animationTime}ms ease-out, padding ${this._animationTime}ms ease-out, opacity ${this._animationTime}ms ease-out`
+          return `transform ${this.props.animationMs}ms ${this.props.transitionTiming}, padding ${this.props.animationMs}ms ${this.props.transitionTiming}, opacity ${this.props.animationMs}ms ${this.props.transitionTiming}`
         case 'resetting':
-          return `transform ${this._animationTime}ms ease-out, padding ${this._animationTime}ms ease-out, opacity ${this._animationTime}ms ease-out`
+          return `transform ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}, padding ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}, opacity ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}`
+        default:
+          return 'none'
       }
     }
 
@@ -111,13 +126,16 @@ class App extends Component {
         case 'hidden':
           return 0
         case 'staging':
-          return 0
+          return this.props.opacity
         case 'blooming':
-          return 1
+          return this.props.opacity
         case 'resetting':
+          return 0
+        default:
           return 0
       }
     }
+
 
     return {
       position: 'absolute',
@@ -127,12 +145,30 @@ class App extends Component {
       transform: arbitrateTransform(),
       width: 0,
       height: 0,
-      backgroundColor: 'rgb(168, 255, 239)',
+      backgroundColor: this.props.backgroundColor,
       opacity: arbitrateOpacity(),
       borderRadius: '100%',
       transition: arbitrateTransition(),
     }
   }
+}
+
+App.propTypes = {
+  bloomSize: PropTypes.number,
+  transitionTiming: PropTypes.string,
+  animationMs: PropTypes.number,
+  animationMsCompound: PropTypes.number,
+  backgroundColor: PropTypes.string,
+  opacity: PropTypes.number,
+}
+
+App.defaultProps = {
+  bloomSize: 75,
+  transitionTiming: 'cubic-bezier(0.215, 0.61, 0.355, 1)', // "easeOutCubic"
+  animationMs: 150,
+  animationMsCompound: 3,
+  backgroundColor: 'rgb(184, 255, 242)',
+  opacity: 0.75,
 }
 
 export default App
