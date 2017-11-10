@@ -40,21 +40,25 @@ class App extends Component {
 
     clearTimeout(this._debloomTimeout)
 
-    this.setState({
-      bloomPhase: 'hidden',
-      x: x,
-      y: y,
-    }, () => this.setState({bloomPhase: 'blooming'}))
+    requestAnimationFrame(() => {
+
+      this.setState({
+        bloomPhase: 'hidden',
+        x: x,
+        y: y,
+      })
+
+      requestAnimationFrame(() => this.setState({bloomPhase: 'blooming'}))
+    })
   }
   handleDisengageButton = () => {
 
-    this.setState({bloomPhase: 'resetting'}, () => {
+    this.setState({bloomPhase: 'resetting'})
 
-      this._debloomTimeout = setTimeout(() => {
+    this._debloomTimeout = setTimeout(() => {
 
-        this.setState({bloomPhase: 'hidden'})
-      }, this.props.animationMs * this.props.animationMsCompound)
-    })
+      this.setState({bloomPhase: 'hidden'})
+    }, this.props.animationMs * this.props.animationMsCompound)
   }
   $1804017614722 () {
     return {
@@ -114,6 +118,7 @@ class App extends Component {
         case 'blooming':
           return `transform ${this.props.animationMs}ms ${this.props.transitionTiming}, padding ${this.props.animationMs}ms ${this.props.transitionTiming}, opacity ${this.props.animationMs}ms ${this.props.transitionTiming}`
         case 'resetting':
+          // use "animationMsCompound" to slow reset animation
           return `transform ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}, padding ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}, opacity ${this.props.animationMs * this.props.animationMsCompound}ms ${this.props.transitionTiming}`
         default:
           return 'none'
@@ -163,12 +168,13 @@ App.propTypes = {
 }
 
 App.defaultProps = {
-  bloomSize: 75,
+  bloomSize: 150,
   transitionTiming: 'cubic-bezier(0.215, 0.61, 0.355, 1)', // "easeOutCubic"
   animationMs: 150,
-  animationMsCompound: 3,
-  backgroundColor: 'rgb(184, 255, 242)',
-  opacity: 0.75,
+  animationMsCompound: 2,
+  // backgroundColor: 'rgb(184, 255, 242)',
+  backgroundColor: 'black',
+  opacity: 0.25,
 }
 
 export default App
