@@ -31,6 +31,8 @@ class App extends Component {
     this._isTouchCapable
     ? document.addEventListener('touchend', this.handleDisengageButton)
     : document.addEventListener('mouseup', this.handleDisengageButton)
+
+    document.addEventListener('contextmenu', (e) => e.preventDefault())
   }
   handleEngageButton = (e) => {
 
@@ -154,6 +156,8 @@ class App extends Component {
       opacity: arbitrateOpacity(),
       borderRadius: '100%',
       transition: arbitrateTransition(),
+      filter: 'blur(75px)',
+      WebKitFilter: 'blur(10px)',
     }
   }
 }
@@ -170,11 +174,11 @@ App.propTypes = {
 App.defaultProps = {
   bloomSize: 150,
   transitionTiming: 'cubic-bezier(0.215, 0.61, 0.355, 1)', // "easeOutCubic"
-  animationMs: 150,
-  animationMsCompound: 2,
-  // backgroundColor: 'rgb(184, 255, 242)',
-  backgroundColor: 'black',
-  opacity: 0.25,
+  animationMs: 250,
+  animationMsCompound: 5,
+  backgroundColor: 'blue',
+  // backgroundColor: 'black',
+  opacity: 0.75,
 }
 
 export default App
